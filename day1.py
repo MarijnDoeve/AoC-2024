@@ -19,11 +19,11 @@ total = 0
 for i in range(len(lefts)):
     total += abs(lefts[i] - rights[i])
 
-print(total)
+print(f"Part 1: {total}")
 
 # PART 2
 
-counts = defaultdict(int)
+counts: defaultdict[int, int] = defaultdict(int)
 
 for number in rights:
     counts[number] += 1
@@ -33,4 +33,4 @@ total = 0
 for number in lefts:
     total += number * counts[number]
 
-print(total)
+print(f"Part 2: {total}")
