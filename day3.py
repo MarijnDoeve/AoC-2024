@@ -1,30 +1,29 @@
 import fileinput
 import re
 
-# regex = r'mul\((?P<first>\d+),(?P<second>\d+)\)'
+lines = "".join(line.strip() for line in fileinput.input())
 
-# total = 0
+# Part 1
 
-# for line in fileinput.input():
-#     for match in re.finditer(regex, line.strip(), re.MULTILINE):
-#         print(match.group('first'))
-#         total += int(match.group('first')) * int(match.group('second'))
-
-# print(f"Part 1: {total}")
-
-
-regex2 = r"(((?P<mul>mul)\((?P<first>\d+),(?P<second>\d+))\)|(?P<do>do\(\))|(?P<not>don't\(\)))"
-
-do = True
+regex = r"mul\((?P<first>\d+),(?P<second>\d+)\)"
 total = 0
 
-for line in fileinput.input():
-    for match in re.finditer(regex2, line.strip(), re.MULTILINE):
-        if match["do"]:
-            do = True
-        elif match["not"]:
-            do = False
-        elif match["mul"] and do:
-            total += int(match.group("first")) * int(match.group("second"))
+for match in re.finditer(regex, lines):
+    total += int(match.group("first")) * int(match.group("second"))
+
+print(f"Part 1: {total}")
+
+# Part 2
+
+regex = r"mul\((?P<first>\d+),(?P<second>\d+)\)|(?P<do>do\(\))|(?P<not>don't\(\))"
+do = True
+total = 0
+for match in re.finditer(regex, lines):
+    if match["do"]:
+        do = True
+    elif match["not"]:
+        do = False
+    elif do:
+        total += int(match.group("first")) * int(match.group("second"))
 
 print(f"Part 2: {total}")
