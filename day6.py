@@ -1,7 +1,6 @@
 import fileinput
 from copy import deepcopy
 from typing import Self
-from warnings import deprecated
 
 GridType = list[list["Position"]]
 Pos = tuple[int, int]
@@ -17,10 +16,10 @@ class Position:
         self.obstacle = obstacle
         self.visited_direction: set[int] = set()
 
-    def __copy__(self) -> Self:
+    def __copy__(self) -> "Position":
         return Position(self.obstacle)
 
-    def __deepcopy__(self, memo) -> Self:
+    def __deepcopy__(self, memo: dict[int, Self]) -> "Position":
         return self.__copy__()
 
 
@@ -32,16 +31,13 @@ class Day6:
 
     def __init__(self, input: fileinput.FileInput[str]) -> None:
         self.grid: GridType = []
-
         direction, guard = self.load_input(input)
-
-        # self.part1(direction, deepcopy(guard))
         self.part2(direction, deepcopy(guard))
 
     def load_input(self, input: fileinput.FileInput[str]) -> tuple[int, Pos]:
         direction: int = Day6.UP
-
         guard = (0, 0)
+
         for y, line in enumerate(input):
             grid_line = []
             for x, char in enumerate(line.strip()):
@@ -56,7 +52,6 @@ class Day6:
     def part1(self, direction: int, guard: Pos) -> None:
         grid = deepcopy(self.grid)
         self.walk_grid(direction, guard, grid)
-
         total = sum([sum([pos.visited for pos in line]) for line in grid])
 
         print(f"Part 1: {total}")
@@ -84,7 +79,7 @@ class Day6:
 
             if grid[y_next][x_next].obstacle == True:
                 direction = (direction + 1) % 4
-                y_next, x_next = Day6.next_pos(y, x, direction)
+                continue
 
             guard = (y_next, x_next)
 
@@ -109,20 +104,7 @@ class Day6:
                 except LoopDetectedException:
                     total += 1
 
-        # 1724, to high
         print(f"Part 2: {total}")
-
-    @staticmethod
-    def print_grid(grid: GridType) -> None:
-        for line in grid:
-            for pos in line:
-                if pos.obstacle:
-                    print("#", end="")
-                elif pos.visited:
-                    print("X", end="")
-                else:
-                    print(".", end="")
-            print()
 
     @staticmethod
     def next_pos(y: int, x: int, direction: int) -> Pos:
