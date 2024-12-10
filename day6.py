@@ -1,8 +1,14 @@
-from copy import deepcopy
 import fileinput
+from copy import deepcopy
+from typing import Self
+from warnings import deprecated
 
 GridType = list[list["Position"]]
 Pos = tuple[int, int]
+
+
+class LoopDetectedException(Exception):
+    pass
 
 
 class Position:
@@ -10,6 +16,12 @@ class Position:
         self.visited = False
         self.obstacle = obstacle
         self.visited_direction: set[int] = set()
+
+    def __copy__(self) -> Self:
+        return Position(self.obstacle)
+
+    def __deepcopy__(self, memo) -> Self:
+        return self.__copy__()
 
 
 class Day6:
@@ -23,8 +35,8 @@ class Day6:
 
         direction, guard = self.load_input(input)
 
-        self.part1(direction, guard)
-        self.part2()
+        # self.part1(direction, deepcopy(guard))
+        self.part2(direction, deepcopy(guard))
 
     def load_input(self, input: fileinput.FileInput[str]) -> tuple[int, Pos]:
         direction: int = Day6.UP
@@ -42,43 +54,66 @@ class Day6:
         return direction, guard
 
     def part1(self, direction: int, guard: Pos) -> None:
+        grid = deepcopy(self.grid)
+        self.walk_grid(direction, guard, grid)
+
+        total = sum([sum([pos.visited for pos in line]) for line in grid])
+
+        print(f"Part 1: {total}")
+
+    @staticmethod
+    def walk_grid(
+        direction: int,
+        guard: Pos,
+        grid: GridType,
+        detect_loops: bool = True,
+    ) -> None:
         while True:
             y, x = guard
-            current = self.grid[y][x]
+            current = grid[y][x]
+
+            if detect_loops and direction in current.visited_direction:
+                raise LoopDetectedException
+
             current.visited = True
             current.visited_direction.add(direction)
-            y_next, x_next = self.next_pos(y, x, direction)
+            y_next, x_next = Day6.next_pos(y, x, direction)
 
-            if not self.in_grid(y_next, x_next):
+            if not Day6.in_grid(y_next, x_next, grid):
                 break
 
-            if self.grid[y_next][x_next].obstacle == True:
+            if grid[y_next][x_next].obstacle == True:
                 direction = (direction + 1) % 4
-                y_next, x_next = self.next_pos(y, x, direction)
+                y_next, x_next = Day6.next_pos(y, x, direction)
 
             guard = (y_next, x_next)
 
-        total = sum([sum([pos.visited for pos in line]) for line in self.grid])
-
-        # self.print_grid(self.grid)
-        print(f"Part 1: {total}")
-
-    def part2(self) -> None:
+    def part2(self, direction: int, guard: Pos) -> None:
         total = 0
+        progress = 0
+        out_of = len(self.grid) * len(self.grid[0])
+        space = len(str(out_of))
 
-        for line in self.grid:
-            for pos in line:
+        for y, line in enumerate(self.grid):
+            for x, pos in enumerate(line):
+                progress += 1
+                print(f"{progress:>{space}}/{out_of}")
+
                 if pos.obstacle:
                     continue
-                # Change to obstacle, check for loops
-                copy_grid = deepcopy(self.grid)
 
+                copy_grid = deepcopy(self.grid)
+                copy_grid[y][x].obstacle = True
+                try:
+                    self.walk_grid(direction, deepcopy(guard), copy_grid)
+                except LoopDetectedException:
+                    total += 1
+
+        # 1724, to high
         print(f"Part 2: {total}")
 
-    def has_loops(self, grid: GridType) -> bool:
-        return False
-
-    def print_grid(self, grid: GridType) -> None:
+    @staticmethod
+    def print_grid(grid: GridType) -> None:
         for line in grid:
             for pos in line:
                 if pos.obstacle:
@@ -103,8 +138,9 @@ class Day6:
             case _:
                 raise ValueError
 
-    def in_grid(self, y: int, x: int) -> bool:
-        return x >= 0 and x < len(self.grid[0]) and y >= 0 and y < len(self.grid)
+    @staticmethod
+    def in_grid(y: int, x: int, grid: GridType) -> bool:
+        return x >= 0 and x < len(grid[0]) and y >= 0 and y < len(grid)
 
 
 if __name__ == "__main__":
