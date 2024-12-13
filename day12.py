@@ -1,4 +1,5 @@
 import fileinput
+from os import stat
 import networkx as nx
 from functools import cache
 from typing import Generator, Self
@@ -42,8 +43,9 @@ class Day12:
         self.grid_to_graph()
 
         print(f"Part 1: {self.calculate_price1()}")
-        self.calculate_bulk_price()
+        print(f"Part 2: {self.calculate_bulk_price()}")
 
+    # can be skipped for the connectivity of a plot
     def place_fences(self) -> None:
         for x in range(self.max_x + 1):
             self.grid[(0, x)].fences[Plot.UP] = True
@@ -86,11 +88,60 @@ class Day12:
     def calculate_bulk_price(self) -> int:
         total = 0
         for region in self.regions:
-            sides = self.get_sides(region)
+            sides = self.get_corners(region)
             n_plots = len(region)
             total += sides * n_plots
-
+            print(
+                f"A region of {region.pop().plant_type} plants with price {n_plots} * {sides} = {n_plots * sides}"
+            )
         return total
+
+    def get_corners(self, region: set[Plot]) -> int:
+        n_corners = 0
+        for plot in region:
+            match len(plot.fences):
+                case 0:
+                    n_corners += self.count_diagonal_other_types(plot)
+                case 1:
+                    diag = self.count_diagonal_other_types(plot)
+                    if diag == 4:
+                        n_corners += 2
+                    elif 3:
+                        n_corners
+                case 2:
+                    if plot.fences == [
+                        True,
+                        False,
+                        True,
+                        False,
+                    ] or plot.fences == [
+                        False,
+                        True,
+                        False,
+                        True,
+                    ]:
+                        break
+                    n_corners += self.count_diagonal_other_types(plot)
+                case 3:
+                    n_corners += 2
+                case 4:
+                    n_corners += 4
+
+        return n_corners
+
+    def count_diagonal_other_types(self, plot: Plot) -> int:
+        count = 0
+
+        for dy, dx in [(-1, -1), (+1, +1), (+1, -1), (-1, +1)]:
+            if not self.in_grid(plot.y + dy, plot.x + dx):
+                continue
+
+            if self.grid[(plot.y + dy, plot.x + dx)].plant_type == plot.plant_type:
+                continue
+
+            count += 1
+
+        return count
 
     def get_neighbour(self, plot: Plot) -> Generator[tuple[int, Plot]]:
         for direction, (dy, dx) in enumerate(((-1, 0), (0, +1), (+1, 0), (0, -1))):
