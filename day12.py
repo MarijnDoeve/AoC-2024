@@ -1,8 +1,8 @@
 import fileinput
-from os import stat
-import networkx as nx
 from functools import cache
 from typing import Generator, Self
+
+import networkx as nx
 
 Point = tuple[int, int]
 

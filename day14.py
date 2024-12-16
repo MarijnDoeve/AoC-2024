@@ -1,9 +1,8 @@
 import fileinput
 import re
 from dataclasses import dataclass
-from re import Match
 from math import prod
-
+from re import Match
 
 Point = tuple[int, int]
 
