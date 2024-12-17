@@ -52,9 +52,16 @@ class Node:
         return y > 0 and x > 0 and y < len(cls.grid) and x < len(cls.grid[0])
 
     @classmethod
-    def print_grid(cls):
+    def print_grid(cls, marked_nodes=None):
+        if marked_nodes is None:
+            marked_nodes = set()
         for line in cls.grid:
-            print("".join("#" if tile.is_wall else "." for tile in line))
+            print(
+                "".join(
+                    "#" if tile.is_wall else "O" if tile in marked_nodes else "."
+                    for tile in line
+                )
+            )
 
     def __hash__(self) -> int:
         return id(self)
@@ -77,23 +84,46 @@ if __name__ == "__main__":
 
     assert start != (0, 0) and end != (0, 0)
 
-    visited: defaultdict[Node, int] = defaultdict(lambda: 1_000_000)
-    stack: list[tuple[Node, Direction, int]] = [
-        (Node.grid[start[0]][start[1]], Direction.EAST, 0)
+    start_node = Node.grid[start[0]][start[1]]
+
+    visited: defaultdict[tuple[int, int, Direction], int] = defaultdict(
+        lambda: 1_000_000
+    )
+    queue: list[tuple[Node, Direction, int, list[Node]]] = [
+        (start_node, Direction.EAST, 0, [start_node])
     ]
 
-    while stack:
-        current, current_direction, current_cost = stack.pop()
+    full_paths: list[tuple[int, list[Node]]] = []
+    while queue:
+        current, current_direction, current_cost, current_path = queue.pop(0)
 
         for direction in Direction:
             if not (neighbor := current.neighbour(direction)):
                 continue
 
             new_cost = current_cost + (1 if current_direction == direction else 1001)
-            if new_cost >= visited[neighbor]:
+            if new_cost > visited[(neighbor.y, neighbor.x, direction)]:
                 continue
 
-            stack.append((neighbor, direction, new_cost))
-            visited[neighbor] = new_cost
+            visited[(neighbor.y, neighbor.x, direction)] = new_cost
 
-    print(visited[Node.grid[end[0]][end[1]]])
+            if (neighbor.y, neighbor.x) == end:
+                full_paths.append((new_cost, current_path + [neighbor]))
+                continue
+
+            queue.append((neighbor, direction, new_cost, current_path + [neighbor]))
+
+    lowest_cost = min(visited[(end[0], end[1], dir)] for dir in Direction)
+
+    print(f"Part 1: {lowest_cost}")
+
+    best_seats: set[Node] = set()
+
+    for cost, node_list in full_paths:
+        if cost != lowest_cost:
+            continue
+
+        best_seats.update(node_list)
+    Node.print_grid(best_seats)
+
+    print(f"Part 2: {len(best_seats)}")
